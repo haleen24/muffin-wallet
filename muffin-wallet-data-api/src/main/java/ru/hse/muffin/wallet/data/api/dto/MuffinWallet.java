@@ -14,6 +14,8 @@ public class MuffinWallet {
 
   private String ownerName;
 
+  private String type;
+
   private OffsetDateTime createdAt;
 
   private OffsetDateTime updatedAt;

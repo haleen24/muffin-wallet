@@ -12,6 +12,8 @@ public class MuffinTransaction {
 
   private BigDecimal amount;
 
+  private BigDecimal currency;
+
   private UUID fromMuffinWalletId;
 
   private UUID toMuffinWalletId;

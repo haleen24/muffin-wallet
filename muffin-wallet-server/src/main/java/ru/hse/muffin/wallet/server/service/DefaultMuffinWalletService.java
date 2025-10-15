@@ -1,22 +1,27 @@
 package ru.hse.muffin.wallet.server.service;
 
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import ru.hse.muffin.wallet.data.api.MuffinTransactionRepository;
 import ru.hse.muffin.wallet.data.api.MuffinWalletRepository;
+import ru.hse.muffin.wallet.server.dto.CurrencyRate;
 import ru.hse.muffin.wallet.server.dto.MuffinTransaction;
 import ru.hse.muffin.wallet.server.dto.MuffinWallet;
 import ru.hse.muffin.wallet.server.exception.MuffinWalletNotFoundException;
 import ru.hse.muffin.wallet.server.mapper.MuffinWalletMapper;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class DefaultMuffinWalletService implements MuffinWalletService {
 
   private final MuffinWalletMapper muffinWalletMapper;
@@ -24,6 +29,11 @@ public class DefaultMuffinWalletService implements MuffinWalletService {
   private final MuffinWalletRepository muffinWalletRepository;
 
   private final MuffinTransactionRepository muffinTransactionRepository;
+
+  @Value("${currency.service.url}")
+  private String serviceUrl;
+
+  private final RestTemplate restTemplate;
 
   @Override
   public MuffinWallet getMuffinWallet(UUID id) {
@@ -72,19 +82,26 @@ public class DefaultMuffinWalletService implements MuffinWalletService {
             .findById(muffinTransaction.getFromMuffinWalletId())
             .orElseThrow(MuffinWalletNotFoundException::new);
 
-    fromWallet.setBalance(fromWallet.getBalance().subtract(muffinTransaction.getAmount()));
-    muffinWalletRepository.update(fromWallet);
-
     var toWallet =
         muffinWalletRepository
             .findById(muffinTransaction.getToMuffinWalletId())
             .orElseThrow(MuffinWalletNotFoundException::new);
 
-    toWallet.setBalance(toWallet.getBalance().add(muffinTransaction.getAmount()));
+    muffinTransaction.setCurrency(getCurrency(fromWallet.getType(), toWallet.getType()));
+
+    fromWallet.setBalance(fromWallet.getBalance().subtract(muffinTransaction.getAmount()));
+    muffinWalletRepository.update(fromWallet);
+
+    toWallet.setBalance(toWallet.getBalance().add(muffinTransaction.getAmount().multiply(muffinTransaction.getCurrency())));
     muffinWalletRepository.update(toWallet);
 
     return muffinWalletMapper.dataDtoToMuffinTransactionServiceDto(
         muffinTransactionRepository.save(
             muffinWalletMapper.serviceDtoToMuffinTransactionDataDto(muffinTransaction)));
+  }
+
+  private BigDecimal getCurrency(String from, String to){
+    String url = String.format("%s?from=%s&to=%s", serviceUrl, from, to);
+    return restTemplate.getForObject(url, CurrencyRate.class).getRate();
   }
 }

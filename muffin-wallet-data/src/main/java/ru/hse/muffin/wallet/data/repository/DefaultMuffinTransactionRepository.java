@@ -22,6 +22,7 @@ public class DefaultMuffinTransactionRepository implements MuffinTransactionRepo
         muffinTransaction.setFromMuffinWalletId(rs.getObject("from_muffin_wallet_id", UUID.class));
         muffinTransaction.setToMuffinWalletId(rs.getObject("to_muffin_wallet_id", UUID.class));
         muffinTransaction.setCreatedAt(rs.getObject("created_at", OffsetDateTime.class));
+        muffinTransaction.setCurrency(rs.getBigDecimal("currency"));
 
         return muffinTransaction;
       };
@@ -32,36 +33,16 @@ public class DefaultMuffinTransactionRepository implements MuffinTransactionRepo
   public MuffinTransaction save(MuffinTransaction transaction) {
     return namedParameterJdbcTemplate.queryForObject(
         """
-        insert into muffin_transaction (id, amount, from_muffin_wallet_id, to_muffin_wallet_id)
-        values (uuid_generate_v4(), :amount, :from_muffin_wallet_id, :to_muffin_wallet_id)
+        insert into muffin_transaction (id, amount, from_muffin_wallet_id, to_muffin_wallet_id, currency)
+        values (uuid_generate_v4(), :amount, :from_muffin_wallet_id, :to_muffin_wallet_id, :currency)
         returning *;
         """,
         Map.of(
             "amount", transaction.getAmount(),
             "from_muffin_wallet_id", transaction.getFromMuffinWalletId(),
-            "to_muffin_wallet_id", transaction.getToMuffinWalletId()),
-        ROW_MAPPER);
-  }
-
-  @Override
-  public MuffinTransaction findById(UUID id) {
-    return namedParameterJdbcTemplate.queryForObject(
-        "select * from muffin_transaction where id = :id", Map.of("id", id), ROW_MAPPER);
-  }
-
-  @Override
-  public MuffinTransaction findByFromMuffinWalletId(UUID fromMuffinWalletId) {
-    return namedParameterJdbcTemplate.queryForObject(
-        "select * from muffin_transaction where from_muffin_wallet_id = :from_muffin_wallet_id",
-        Map.of("from_muffin_wallet_id", fromMuffinWalletId),
-        ROW_MAPPER);
-  }
-
-  @Override
-  public MuffinTransaction findByToMuffinWalletId(UUID toMuffinWalletId) {
-    return namedParameterJdbcTemplate.queryForObject(
-        "select * from muffin_transaction where to_muffin_wallet_id = :to_muffin_wallet_id",
-        Map.of("to_muffin_wallet_id", toMuffinWalletId),
+            "to_muffin_wallet_id", transaction.getToMuffinWalletId(),
+            "currency", transaction.getCurrency()
+        ),
         ROW_MAPPER);
   }
 }

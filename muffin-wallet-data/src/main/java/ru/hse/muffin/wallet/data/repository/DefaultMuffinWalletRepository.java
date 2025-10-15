@@ -25,6 +25,7 @@ public class DefaultMuffinWalletRepository implements MuffinWalletRepository {
         muffinWallet.setOwnerName(rs.getString("owner_name"));
         muffinWallet.setCreatedAt(rs.getObject("created_at", OffsetDateTime.class));
         muffinWallet.setUpdatedAt(rs.getObject("updated_at", OffsetDateTime.class));
+        muffinWallet.setType(rs.getString("type"));
 
         return muffinWallet;
       };
@@ -37,11 +38,11 @@ public class DefaultMuffinWalletRepository implements MuffinWalletRepository {
 
     return namedParameterJdbcTemplate.queryForObject(
         """
-        insert into muffin_wallet (id, balance, owner_name)
-        values (:id, :balance, :owner_name)
+        insert into muffin_wallet (id, balance, owner_name, type)
+        values (:id, :balance, :owner_name, :type)
         returning *;
         """,
-        Map.of("id", id, "balance", wallet.getBalance(), "owner_name", wallet.getOwnerName()),
+        Map.of("id", id, "balance", wallet.getBalance(), "owner_name", wallet.getOwnerName(), "type", wallet.getType()),
         ROW_MAPPER);
   }
 
