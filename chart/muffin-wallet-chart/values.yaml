@@ -1,0 +1,63 @@
+global:
+  namespace: default
+
+image:
+  repository: docker.io/haleen/muffin-wallet
+  tag: "1.1.0"
+  pullPolicy: IfNotPresent
+
+deployment:
+  name: muffin-wallet
+#  serviceAccount: muffin-wallet-sa
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+readinessProbe:
+  path: /actuator/health/readiness
+  port: 8081
+  initialDelaySeconds: 20
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+livenessProbe:
+  path: /actuator/health/liveness
+  port: 8081
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+service:
+  type: NodePort
+  port: 8080
+  targetPort: 8081
+  nodePort: 30081
+
+ingress:
+  enabled: true
+  name: muffin-wallet-ingress
+  className: "nginx"
+  host: "muffin-wallet.haleen"
+  path: "/"
+  pathType: "Prefix"
+  tls:
+    secretName: "muffin-wallet-tls"
+
+check:
+  sleep: 30
+
+
+app:
+  name: muffin-wallet
+  applicationConfigVolume: application-config-volume
+  jdbcUrl: jdbc:postgresql://postgres:5432/muffin_wallet
+  dbUsername: postgres
+  dbPassword: postgres
+  jdkJavaOptions: -Dspring.config.additional-location=/app/config/application.yaml
+  secretName: muffin-wallet-secret

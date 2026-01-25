@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'muffin-wallet'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:80']
+    relabel_configs:
+      - source_labels: []
+        target_label: host
+        replacement: 'wallet.example.com'
