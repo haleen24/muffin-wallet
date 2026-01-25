@@ -1,0 +1,20 @@
+releases:
+  - name: test-pg
+    namespace: default
+    chart: ./test-postgres-chart
+    createNamespace: false
+  - name: muffin-currency
+    namespace: default
+    chart: ./muffin-currency-chart
+    needs:
+      - test-pg
+    createNamespace: false
+  - name: muffin-wallet
+    namespace: default
+    chart: ./muffin-wallet-chart
+    createNamespace: false
+    needs:
+      - muffin-currency
+  - name: ingress
+    namespace: default
+    chart: ./ingress-chart
