@@ -16,15 +16,26 @@
 
 * чтобы воспользоваться графаной - пробросить порты через port forward или использовать minikube service grafana
 * чтобы открыть интерфейс зипкина - пробросить порты через port forward или использовать minikube service zipkin
-*
+* чтобы работать с muffin-wallet - пробросить порты через port forward или использовать minikube service muffin-wallet
+
+Транзакции работают (проверял)
+
+![img.png](images/grafana_transaction.png)
+
+можно искать по трейсу в графане
+
+![img.png](images/grafana_transaction_trace.png)
+
+можно искать по трейсу в zipkin
+
+![img.png](images/zipkin_trace_search.png)
+
+Проверял, что локи и зипкин персистентны - сносил весь релиз через helmfile destroy и заново накатывал, данные не
+терялись
 
 ВСЕ ЧТО НИЖЕ ЭТОЙ ЗАПИСИ ОТНОСИТСЯ К ДЗ ПО ПРОМЕТЕУСУ.
 --------------------------------------
-
-
-
-
-
+ПРОМЕТЕУС РАЗВЕРНУТ В docker-compose - осталось от предыдущей домашки
 
 Перед началом надо добавить в /etc/hosts запись:
 

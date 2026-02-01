@@ -8,13 +8,12 @@ data:
     server:
       port: 8081
     spring:
+      application:
+        name: muffin-wallet
       datasource:
         url: ${DB_URL}
         username: ${DB_USERNAME}
         password: ${DB_PASSWORD}
-      zipkin:
-        base-url: http://zipkin:9411
-        enabled: true
     currency:
       service:
         url: http://muffin-currency/rate
@@ -22,6 +21,12 @@ data:
       file:
         name: /logs/app.log
     management:
+      zipkin:
+        tracing:
+          endpoint: http://zipkin:9411/api/v2/spans
+      tracing:
+        sampling:
+          probability: 1.0
       endpoints:
         web:
           exposure:

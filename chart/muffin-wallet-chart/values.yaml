@@ -3,7 +3,7 @@ global:
 
 image:
   repository: docker.io/haleen/muffin-wallet
-  tag: "1.2.4"
+  tag: "1.2.5"
   pullPolicy: IfNotPresent
 
 deployment:

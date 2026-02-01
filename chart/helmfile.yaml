@@ -43,12 +43,20 @@ releases:
     values:
       - image:
           repository: openzipkin/zipkin
+          tag: "3.0"
         service:
           type: NodePort
           nodePort: 30100
-        storage: mem
-        metrics:
-          enabled: false
+        storage: filesystem
+        persistence:
+          enabled: true
+          size: 256Mi
+          storageClass: "standard"
+        env:
+          - name: STORAGE_TYPE
+            value: "filesystem"
+          - name: ZIPKIN_STORAGE_FILESYSTEM_DIRECTORY
+            value: "/data/zipkin"
   - name: grafana
     chart: grafana/grafana
     version: 6.57.3
