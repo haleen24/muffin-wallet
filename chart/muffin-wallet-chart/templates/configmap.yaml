@@ -12,9 +12,15 @@ data:
         url: ${DB_URL}
         username: ${DB_USERNAME}
         password: ${DB_PASSWORD}
+      zipkin:
+        base-url: http://zipkin:9411
+        enabled: true
     currency:
       service:
         url: http://muffin-currency/rate
+    logging:
+      file:
+        name: /logs/app.log
     management:
       endpoints:
         web:

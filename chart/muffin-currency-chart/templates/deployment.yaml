@@ -17,10 +17,16 @@ spec:
         app: muffin-currency
         release: {{ .Release.Name }}
     spec:
+      volumes:
+        - name: logs-volume
+          emptyDir: { }
       containers:
       - name: muffin-currency
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+          - name: ZIPKIN_ENDPOINT
+            value: {{ .Values.tracing.zipkinEndpoint }}
         ports:
         - name: http
           containerPort: {{ .Values.service.targetPort }}
@@ -37,3 +43,55 @@ spec:
             port: http
           initialDelaySeconds: {{ .Values.healthCheck.readiness.initialDelaySeconds }}
           periodSeconds: {{ .Values.healthCheck.readiness.periodSeconds }}
+        volumeMounts:
+          - name: logs-volume
+            mountPath: /logs
+      - name: alloy-sidecar
+        image: grafana/alloy:latest
+        volumeMounts:
+          - name: logs-volume
+            mountPath: /logs
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            cat > /tmp/alloy.config << 'EOF'
+            loki.source.file "app_logs" {
+              targets = [
+                { __path__ = "/logs/app.log" },
+              ]
+              forward_to = [loki.process.add_all_labels.receiver]
+            }
+            loki.process "add_all_labels" {
+              forward_to = [loki.write.to_loki.receiver]
+              stage.static_labels {
+                values = {
+                  app = "muffin-currency",
+                }
+              }
+              stage.regex {
+                expression = ".*(?P<json>{.*})$"
+              }
+              stage.json {
+                expressions = {
+                  level      = "level",
+                  method     = "method",
+                  path       = "path",
+                  status     = "status",
+                }
+              }
+              stage.labels {
+                values = {
+                  level       = "",
+                  method      = "",
+                  path        = "",
+                  status      = "",
+                }
+              }
+            }
+            loki.write "to_loki" {
+              endpoint {
+                url = "http://loki-stack:3100/loki/api/v1/push"
+              }
+            }
+            EOF
+            exec /bin/alloy run /tmp/alloy.config

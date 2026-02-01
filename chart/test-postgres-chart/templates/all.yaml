@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: postgres-config
+  name: postgres-init-config
 data:
   init.sql: |
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -30,6 +30,13 @@ spec:
               value: postgres
             - name: POSTGRES_PASSWORD
               value: postgres
+          volumeMounts:
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d/
+      volumes:
+        - name: init-script
+          configMap:
+            name: postgres-init-config
 ---
 apiVersion: v1
 kind: Service

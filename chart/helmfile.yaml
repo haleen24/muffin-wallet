@@ -1,3 +1,9 @@
+repositories:
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+  - name: openzipkin
+    url: https://openzipkin.github.io/zipkin-helm
+
 releases:
   - name: test-pg
     namespace: default
@@ -18,3 +24,44 @@ releases:
   - name: ingress
     namespace: default
     chart: ./ingress-chart
+  - name: loki-stack
+    chart: grafana/loki-stack
+    version: 2.10.0
+    values:
+      - loki:
+          persistence:
+            enabled: true
+            size: 256Mi
+        promtail:
+          enabled: false
+        grafana:
+          enabled: false
+  - name: zipkin
+    namespace: default
+    chart: openzipkin/zipkin
+    version: 0.4.0
+    values:
+      - image:
+          repository: openzipkin/zipkin
+        service:
+          type: NodePort
+          nodePort: 30100
+        storage: mem
+        metrics:
+          enabled: false
+  - name: grafana
+    chart: grafana/grafana
+    version: 6.57.3
+    values:
+      - adminPassword: admin
+        service:
+          type: NodePort
+          nodePort: 30000
+        datasources:
+          datasources.yaml:
+            apiVersion: 1
+            datasources:
+              - name: Loki
+                type: loki
+                url: http://loki-stack:3100
+                access: proxy

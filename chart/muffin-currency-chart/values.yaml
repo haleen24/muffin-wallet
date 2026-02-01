@@ -1,9 +1,9 @@
 replicaCount: 2
 
 image:
-  repository: userviktoriuss/muffin-currency
+  repository: haleen/muffin-currency
   pullPolicy: IfNotPresent
-  tag: "1.0.0"
+  tag: "1.2.1"
 
 service:
   type: ClusterIP
@@ -19,3 +19,6 @@ healthCheck:
     path: /rate?from=PLAIN&to=CHOKOLATE
     initialDelaySeconds: 2
     periodSeconds: 5
+
+tracing:
+  zipkinEndpoint: http://zipkin:9411/api/v2/spans
