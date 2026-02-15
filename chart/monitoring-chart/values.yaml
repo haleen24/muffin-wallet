@@ -1,0 +1,94 @@
+otel:
+  name: otel-collector
+  mode: deployment
+  version: 0.106.0
+  replicas: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  serviceMonitor:
+    interval: 30s
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+      k8sattributes:
+        auth_type: serviceAccount
+        passthrough: false
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.deployment.name
+            - k8s.pod.name
+            - k8s.node.name
+            - k8s.container.name
+      transform/trace:
+        log_statements:
+          - context: log
+            statements:
+              - set(resource.attributes["trace_id"], trace_id.string)
+              - set(resource.attributes["span_id"], span_id.string)
+      resource/loki:
+        attributes:
+          - key: loki.resource.labels
+            value: service.name, k8s.namespace.name, k8s.pod.name, k8s.container.name, k8s.deployment.name, trace_id, span_id
+            action: insert
+          - key: loki.attribute.labels
+            value: level, trace_id, span_id
+            action: insert
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:8889
+      loki:
+        endpoint: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+        default_labels_enabled:
+          exporter: false
+          job: true
+      zipkin:
+        endpoint: http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans
+      logging:
+        verbosity: detailed
+
+
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, k8sattributes, batch]
+          exporters: [prometheus]
+        logs:
+          receivers: [ otlp ]
+          processors: [ memory_limiter, k8sattributes, transform/trace, resource/loki, batch]
+          exporters: [ loki ]
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [zipkin]
+
+  service:
+    type: ClusterIP
+    ports:
+      - name: otlp-grpc
+        port: 4317
+        targetPort: 4317
+      - name: otlp-http
+        port: 4318
+        targetPort: 4318
+      - name: prometheus
+        port: 8889
+        targetPort: 8889

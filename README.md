@@ -1,3 +1,12 @@
+## СОЗДАНИЕ operators
+cert-manager: `kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.15.0/cert-manager.yaml`
+
+opentelemetry-operator: `kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/download/v0.114.0/opentelemetry-operator.yaml`
+
+prometheus-operator: `kubectl apply --server-side -f  https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.74.0/bundle.yaml`
+
+дашборды: 4701 (JVM Micrometer)
+
 ## что надо сделать:
 
 1. запустить миникуб - minikube start --driver=docker

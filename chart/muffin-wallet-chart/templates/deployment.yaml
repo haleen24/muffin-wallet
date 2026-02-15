@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.deployment.name }}
-  namespace: {{ .Values.global.namespace }}
   labels:
     app: {{ .Values.deployment.name }}
 spec:
@@ -19,6 +18,8 @@ spec:
     {{- end }}
   template:
     metadata:
+      annotations:
+        instrumentation.opentelemetry.io/inject-java: "true"
       labels:
         app: {{ .Values.deployment.name }}
     spec:
@@ -66,52 +67,3 @@ spec:
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
             failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
-        - name: alloy-sidecar
-          image: grafana/alloy:latest
-          volumeMounts:
-            - name: logs-volume
-              mountPath: /logs
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              cat > /tmp/alloy.config << 'EOF'
-              loki.source.file "app_logs" {
-                targets = [
-                  { __path__ = "/logs/app.log" },
-                ]
-                forward_to = [loki.process.add_all_labels.receiver]
-              }
-              loki.process "add_all_labels" {
-                forward_to = [loki.write.to_loki.receiver]
-                stage.static_labels {
-                  values = {
-                    app = "muffin-wallet",
-                  }
-                }
-                stage.regex {
-                  expression = ".*(?P<json>{.*})$"
-                }
-                stage.json {
-                  expressions = {
-                    level      = "level",
-                    method     = "method",
-                    path       = "path",
-                    status     = "status",
-                  }
-                }
-                stage.labels {
-                  values = {
-                    level       = "",
-                    method      = "",
-                    path        = "",
-                    status      = "",
-                  }
-                }
-              }
-              loki.write "to_loki" {
-                endpoint {
-                  url = "http://loki-stack:3100/loki/api/v1/push"
-                }
-              }
-              EOF
-              exec /bin/alloy run /tmp/alloy.config

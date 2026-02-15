@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: haleen/muffin-currency
@@ -21,4 +21,4 @@ healthCheck:
     periodSeconds: 5
 
 tracing:
-  zipkinEndpoint: http://zipkin:9411/api/v2/spans
+  zipkinEndpoint: http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans

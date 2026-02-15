@@ -61,36 +61,49 @@ spec:
               ]
               forward_to = [loki.process.add_all_labels.receiver]
             }
+            
             loki.process "add_all_labels" {
-              forward_to = [loki.write.to_loki.receiver]
+              forward_to = [otelcol.receiver.loki.default.receiver]
               stage.static_labels {
                 values = {
                   app = "muffin-currency",
+                  service_name = "muffin-currency",
                 }
-              }
-              stage.regex {
-                expression = ".*(?P<json>{.*})$"
               }
               stage.json {
                 expressions = {
-                  level      = "level",
-                  method     = "method",
-                  path       = "path",
-                  status     = "status",
+                  level    = "level",
+                  method   = "method",
+                  path     = "path",
+                  status   = "status",
+                  trace_id = "trace_id",
+                  span_id  = "span_id",
                 }
               }
               stage.labels {
                 values = {
-                  level       = "",
-                  method      = "",
-                  path        = "",
-                  status      = "",
+                  level    = "",
+                  method   = "",
+                  path     = "",
+                  status   = "",
+                  trace_id = "",
+                  span_id  = "",
                 }
               }
             }
-            loki.write "to_loki" {
-              endpoint {
-                url = "http://loki-stack:3100/loki/api/v1/push"
+            
+            otelcol.receiver.loki "default" {
+              output {
+                logs = [otelcol.exporter.otlp.default.input]
+              }
+            }
+            
+            otelcol.exporter.otlp "default" {
+              client {
+                endpoint = "otel-collector-collector.monitoring.svc.cluster.local:4317"
+                tls {
+                  insecure = true
+                }
               }
             }
             EOF

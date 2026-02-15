@@ -1,75 +1,98 @@
 repositories:
-  - name: grafana
-    url: https://grafana.github.io/helm-charts
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
   - name: openzipkin
-    url: https://openzipkin.github.io/zipkin-helm
+    url: https://openzipkin.github.io/zipkin
 
 releases:
   - name: test-pg
-    namespace: default
+    namespace: app
     chart: ./test-postgres-chart
-    createNamespace: false
+    createNamespace: true
   - name: muffin-currency
-    namespace: default
+    namespace: app
     chart: ./muffin-currency-chart
     needs:
-      - test-pg
+      - app/test-pg
     createNamespace: false
   - name: muffin-wallet
-    namespace: default
+    namespace: app
     chart: ./muffin-wallet-chart
     createNamespace: false
     needs:
-      - muffin-currency
+      - app/muffin-currency
   - name: ingress
-    namespace: default
+    namespace: ingress
     chart: ./ingress-chart
-  - name: loki-stack
+    createNamespace: true
+  - name: grafana-prometheus
+    namespace: monitoring
+    chart: prometheus-community/kube-prometheus-stack
+    version: 56.0.0
+    set:
+      - name: "prometheusOperator.enabled"
+        value: "false"
+      - name: "prometheus.enabled"
+        value: "true"
+      - name: "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.accessModes[0]"
+        value: "ReadWriteOnce"
+      - name: "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
+        value: "512Gi"
+      - name: "prometheus.prometheusSpec.retention"
+        value: "30d"
+      - name: "grafana.enabled"
+        value: "true"
+      - name: "grafana.persistence.enabled"
+        value: "true"
+      - name: "grafana.persistence.size"
+        value: "512Mi"
+      - name: "grafana.persistence.storageClassName"
+        value: "standard"
+      - name: "grafana.adminPassword"
+        value: "admin"
+      - name: "grafana.defaultDashboardsEnabled"
+        value: "true"
+      - name: "alertmanager.enabled"
+        value: "false"
+      - name: "kubeStateMetrics.enabled"
+        value: "true"
+      - name: "nodeExporter.enabled"
+        value: "true"
+  - name: loki
+    namespace: monitoring
     chart: grafana/loki-stack
-    version: 2.10.0
-    values:
-      - loki:
-          persistence:
-            enabled: true
-            size: 256Mi
-        promtail:
-          enabled: false
-        grafana:
-          enabled: false
+    version: 2.10.2
+    set:
+      - name: "loki.image.tag"
+        value: "2.9.10"
+      - name: "loki.persistence.enabled"
+        value: "true"
+      - name: "loki.persistence.size"
+        value: "512Mi"
+      - name: "loki.config.auth_enabled"
+        value: "false"
+      - name: "prometheus.enabled"
+        value: "false"
+      - name: "grafana.enabled"
+        value: "false"
+      - name: "promtail.enabled"
+        value: "false"
   - name: zipkin
-    namespace: default
+    namespace: monitoring
     chart: openzipkin/zipkin
-    version: 0.4.0
-    values:
-      - image:
-          repository: openzipkin/zipkin
-          tag: "3.0"
-        service:
-          type: NodePort
-          nodePort: 30100
-        storage: filesystem
-        persistence:
-          enabled: true
-          size: 256Mi
-          storageClass: "standard"
-        env:
-          - name: STORAGE_TYPE
-            value: "filesystem"
-          - name: ZIPKIN_STORAGE_FILESYSTEM_DIRECTORY
-            value: "/data/zipkin"
-  - name: grafana
-    chart: grafana/grafana
-    version: 6.57.3
-    values:
-      - adminPassword: admin
-        service:
-          type: NodePort
-          nodePort: 30000
-        datasources:
-          datasources.yaml:
-            apiVersion: 1
-            datasources:
-              - name: Loki
-                type: loki
-                url: http://loki-stack:3100
-                access: proxy
+    version: 0.3.0
+    createNamespace: false
+    set:
+      - name: "storage.type"
+        value: "mem"
+      - name: "persistence.enabled"
+        value: "true"
+      - name: "persistence.size"
+        value: "512Mi"
+      - name: "persistence.storageClass"
+        value: "standard"
+  - name: monitoring
+    namespace: monitoring
+    createNamespace: true
+    chart: ./monitoring-chart
+    version: 0.1.0

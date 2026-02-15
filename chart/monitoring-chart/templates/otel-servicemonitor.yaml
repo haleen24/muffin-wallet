@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.otel.name }}
+  labels:
+    release: grafana-prometheus
+spec:
+  selector:
+    matchLabels:
+      release: grafana-prometheus
+      app.kubernetes.io/name: {{ .Values.otel.name }}
+  endpoints:
+    - port: prometheus
+      interval: {{ .Values.otel.serviceMonitor.interval }}
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}

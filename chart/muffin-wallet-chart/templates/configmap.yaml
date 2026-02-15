@@ -8,6 +8,8 @@ data:
     server:
       port: 8081
     spring:
+      mvc:
+        log-request-details: true
       application:
         name: muffin-wallet
       datasource:
@@ -18,15 +20,17 @@ data:
       service:
         url: http://muffin-currency/rate
     logging:
+      level:
+        org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: TRACE
       file:
         name: /logs/app.log
     management:
       zipkin:
         tracing:
-          endpoint: http://zipkin:9411/api/v2/spans
+          enabled: false
+          endpoint: http://zipkin.monitoring.svc.cluster.local:9411/api/v2/spans
       tracing:
-        sampling:
-          probability: 1.0
+        enabled: false
       endpoints:
         web:
           exposure:
