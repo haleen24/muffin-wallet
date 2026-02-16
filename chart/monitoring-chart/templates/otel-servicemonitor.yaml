@@ -7,7 +7,6 @@ metadata:
 spec:
   selector:
     matchLabels:
-      release: grafana-prometheus
       app.kubernetes.io/name: {{ .Values.otel.name }}
   endpoints:
     - port: prometheus

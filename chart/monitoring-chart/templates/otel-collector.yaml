@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.otel.name }}
   labels:
     app.kubernetes.io/name: {{ .Values.otel.name }}
-    app.kubernetes.io/component: otel-collector
+    app.kubernetes.io/component: {{ .Values.otel.name }}
     app.kubernetes.io/managed-by: helm
 spec:
   mode: {{ .Values.mode }}
@@ -26,7 +26,6 @@ metadata:
   name: {{ .Values.otel.name }}
   labels:
     app.kubernetes.io/name: {{ .Values.otel.name }}
-    app.kubernetes.io/component: otel-collector
     app.kubernetes.io/managed-by: helm
 spec:
   type: {{ .Values.otel.service.type }}
@@ -38,7 +37,6 @@ spec:
     {{- end }}
   selector:
     app.kubernetes.io/name: {{ .Values.otel.name }}
-    app.kubernetes.io/component: otel-collector
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
